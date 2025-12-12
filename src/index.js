@@ -15,6 +15,7 @@ app.use(express.json());
 app.use('/webhooks', require('./routes/webhooks'));
 app.use('/api/projects', require('./routes/projects'));
 app.use('/api/fbgroups', require('./routes/fbgroups'));
+app.use('/api/announce', require('./routes/announce'));
 
 // Health check
 app.get('/health', (req, res) => {
@@ -98,29 +99,37 @@ app.get('/', (req, res) => {
   `);
 });
 
-// Start server
-const PORT = config.port;
-app.listen(PORT, () => {
-  console.log(`
+// Start server (only when not in Vercel serverless)
+if (!process.env.VERCEL) {
+  const PORT = config.port;
+  app.listen(PORT, () => {
+    console.log(`
   ┌─────────────────────────────────────────────┐
   │                                             │
   │   🚀 ShipPost is running!                   │
   │                                             │
   │   Local:  http://localhost:${PORT}             │
   │                                             │
-  │   Endpoints:                                │
+  │   Webhooks:                                 │
   │   • POST /webhooks/github                   │
+  │   • POST /webhooks/generate                 │
+  │                                             │
+  │   Announcements:                            │
+  │   • POST /api/announce/feature              │
+  │   • POST /api/announce/quick                │
+  │   • GET  /api/announce/projects             │
+  │                                             │
+  │   Projects:                                 │
   │   • GET  /api/projects                      │
   │   • POST /api/projects                      │
-  │   • POST /api/projects/:id/generate         │
   │                                             │
   │   FB Groups (hybrid):                       │
   │   • GET  /api/fbgroups                      │
   │   • POST /api/fbgroups/queue                │
-  │   • POST /api/fbgroups/open/:groupId        │
   │                                             │
   └─────────────────────────────────────────────┘
-  `);
-});
+    `);
+  });
+}
 
 module.exports = app;

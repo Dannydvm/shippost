@@ -1,7 +1,10 @@
 /**
  * ShipPost Configuration
  */
-require('dotenv').config();
+// Only load dotenv if .env file exists (not in Vercel)
+if (!process.env.VERCEL) {
+  require('dotenv').config();
+}
 
 module.exports = {
   port: process.env.PORT || 3100,

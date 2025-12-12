@@ -10,7 +10,15 @@
  * Optionally uses Puppeteer to connect to existing Chrome session
  * for semi-automated posting.
  */
-const open = require('open');
+// Open is an ES module, use dynamic import only when needed locally
+let open = null;
+async function getOpen() {
+  if (process.env.VERCEL) return null; // Can't open browsers on Vercel
+  if (!open) {
+    open = (await import('open')).default;
+  }
+  return open;
+}
 
 // Danny's FB Groups & Profiles
 const FB_GROUPS = {
@@ -114,11 +122,22 @@ class FBGroupsService {
   /**
    * Open browser to a specific group with content ready to paste
    * Copies content to clipboard first
+   * Note: This only works locally, not on Vercel
    */
   async openGroupForPosting(groupId, content) {
     const group = this.groups[groupId];
     if (!group) {
       return { success: false, error: `Group not found: ${groupId}` };
+    }
+
+    // Skip browser operations on Vercel
+    if (process.env.VERCEL) {
+      return {
+        success: false,
+        error: 'Cannot open browser on serverless platform',
+        group: group.name,
+        url: group.url
+      };
     }
 
     // Copy content to clipboard (macOS)
@@ -130,7 +149,10 @@ class FBGroupsService {
     }
 
     // Open browser to the group
-    await open(group.url);
+    const openBrowser = await getOpen();
+    if (openBrowser) {
+      await openBrowser(group.url);
+    }
 
     console.log(`[FBGroups] Opened ${group.name} - content copied to clipboard`);
 
