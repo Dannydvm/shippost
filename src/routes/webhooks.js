@@ -14,6 +14,58 @@ const { voiceAnalyzer } = require('../services/voiceAnalyzer');
 const urgencyClassifier = require('../services/urgencyClassifier');
 const config = require('../config');
 
+// Hardcoded projects for Vercel serverless (in-memory doesn't persist)
+const KNOWN_PROJECTS = {
+  'Dannydvm/shippost': {
+    id: 'shippost',
+    name: 'ShipPost',
+    githubRepo: 'Dannydvm/shippost',
+    localPath: '/Users/chadix/Cline/ShipPost',
+    brand: { name: 'ShipPost', voice: 'casual-founder', platforms: ['twitter'] },
+    postFrequency: 'smart',
+    active: true
+  },
+  'seogrowthmode/chiroflow-calendly': {
+    id: 'chiroflow-crm',
+    name: 'ChiroFlow CRM',
+    githubRepo: 'seogrowthmode/chiroflow-calendly',
+    localPath: '/Users/chadix/Cline/ChiroFlow Vapi Calendly Integration - New Sales Calls and Onboarding for Upgrades',
+    brand: { name: 'ChiroFlow', voice: 'professional', platforms: ['twitter', 'fb-group'] },
+    fbGroupId: '671382746877005',
+    postFrequency: 'smart',
+    active: true
+  },
+  'seogrowthmode/chiroflow-app': {
+    id: 'chiroflow-app',
+    name: 'ChiroFlow App',
+    githubRepo: 'seogrowthmode/chiroflow-app',
+    localPath: '/Users/chadix/Cline/ChiroFlow Vapi Calendly Integration - New Sales Calls and Onboarding for Upgrades',
+    brand: { name: 'ChiroFlow', voice: 'professional', platforms: ['twitter', 'fb-group'] },
+    fbGroupId: '671382746877005',
+    postFrequency: 'smart',
+    active: true
+  },
+  'seogrowthmode/chadix-app-website-v2': {
+    id: 'chadix',
+    name: 'Chadix',
+    githubRepo: 'seogrowthmode/chadix-app-website-v2',
+    localPath: '/Users/chadix/Cline/chadixv2',
+    brand: { name: 'Chadix', voice: 'casual-founder', platforms: ['twitter', 'linkedin'] },
+    fbGroupId: '991392238948400',
+    postFrequency: 'smart',
+    active: true
+  },
+  'seogrowthmode/automation-framework': {
+    id: 'automation-framework',
+    name: 'Automation Framework',
+    githubRepo: 'seogrowthmode/automation-framework',
+    localPath: '/Users/chadix/Cline/automation-framework',
+    brand: { name: 'Local Web Builder', voice: 'casual-founder', platforms: ['twitter'] },
+    postFrequency: 'smart',
+    active: true
+  }
+};
+
 /**
  * Verify GitHub webhook signature
  */
@@ -113,8 +165,11 @@ router.post('/github', async (req, res) => {
 
   console.log(`[Webhook] Push to ${repoFullName}: ${payload.commits?.length || 0} commits`);
 
-  // Find the project for this repo
-  const project = await projectManager.getProjectByRepo(repoFullName);
+  // Find the project for this repo (check hardcoded first, then DB)
+  let project = KNOWN_PROJECTS[repoFullName];
+  if (!project) {
+    project = await projectManager.getProjectByRepo(repoFullName);
+  }
 
   if (!project) {
     console.log(`[Webhook] No project configured for ${repoFullName}`);
