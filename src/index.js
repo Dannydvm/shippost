@@ -14,6 +14,7 @@ app.use(express.json());
 // Routes
 app.use('/webhooks', require('./routes/webhooks'));
 app.use('/api/projects', require('./routes/projects'));
+app.use('/api/fbgroups', require('./routes/fbgroups'));
 
 // Health check
 app.get('/health', (req, res) => {
@@ -101,19 +102,24 @@ app.get('/', (req, res) => {
 const PORT = config.port;
 app.listen(PORT, () => {
   console.log(`
-  ┌─────────────────────────────────────────┐
-  │                                         │
-  │   🚀 ShipPost is running!               │
-  │                                         │
-  │   Local:  http://localhost:${PORT}         │
-  │                                         │
-  │   Endpoints:                            │
-  │   • POST /webhooks/github               │
-  │   • GET  /api/projects                  │
-  │   • POST /api/projects                  │
-  │   • POST /api/projects/:id/generate     │
-  │                                         │
-  └─────────────────────────────────────────┘
+  ┌─────────────────────────────────────────────┐
+  │                                             │
+  │   🚀 ShipPost is running!                   │
+  │                                             │
+  │   Local:  http://localhost:${PORT}             │
+  │                                             │
+  │   Endpoints:                                │
+  │   • POST /webhooks/github                   │
+  │   • GET  /api/projects                      │
+  │   • POST /api/projects                      │
+  │   • POST /api/projects/:id/generate         │
+  │                                             │
+  │   FB Groups (hybrid):                       │
+  │   • GET  /api/fbgroups                      │
+  │   • POST /api/fbgroups/queue                │
+  │   • POST /api/fbgroups/open/:groupId        │
+  │                                             │
+  └─────────────────────────────────────────────┘
   `);
 });
 
