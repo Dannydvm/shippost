@@ -178,16 +178,30 @@ Return ONLY the post text, nothing else.`
  */
 async function generateAllPosts(commits, projectContext, platforms = ['twitter']) {
   const posts = [];
+  const errors = [];
+
+  console.log(`[ContentGenerator] Generating posts for platforms: ${platforms.join(', ')}`);
+  console.log(`[ContentGenerator] Commits count: ${commits.length}`);
+  console.log(`[ContentGenerator] Project config: ${JSON.stringify(projectContext.config)?.substring(0, 200)}`);
 
   for (const platform of platforms) {
     try {
+      console.log(`[ContentGenerator] Generating ${platform} post...`);
       const post = await generatePost(commits, projectContext, platform);
-      if (post) posts.push(post);
+      if (post) {
+        posts.push(post);
+        console.log(`[ContentGenerator] ${platform} post generated: ${post.content?.substring(0, 100)}...`);
+      } else {
+        console.log(`[ContentGenerator] ${platform} post returned null`);
+        errors.push({ platform, error: 'Post returned null' });
+      }
     } catch (e) {
-      console.error(`Failed to generate ${platform} post:`, e.message);
+      console.error(`[ContentGenerator] Failed to generate ${platform} post:`, e.message);
+      errors.push({ platform, error: e.message });
     }
   }
 
+  console.log(`[ContentGenerator] Generated ${posts.length} posts, ${errors.length} errors`);
   return posts;
 }
 

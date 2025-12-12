@@ -326,7 +326,9 @@ router.post('/github', async (req, res) => {
       immediateCommits: classification.immediate.length,
       batchedCommits: classification.batch.length,
       postsGenerated: immediateResult.generated,
-      reasoning: classification.reasoning
+      reasoning: classification.reasoning,
+      generationError: immediateResult.error,
+      generationReason: immediateResult.reason
     });
   }
 
