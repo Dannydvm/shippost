@@ -16,7 +16,7 @@ const CHAD_PROJECTS = [
       name: 'Chadix',
       voice: 'casual-founder',
       platforms: ['twitter', 'linkedin'],
-      accountHandle: '@caborjrern'
+      accountHandle: '@dannyveigatx'
     },
     tagging: {
       alwaysTag: [],
