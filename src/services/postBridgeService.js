@@ -3,19 +3,28 @@
  *
  * Integration with Post-Bridge API for multi-platform posting
  * https://www.post-bridge.com/
+ *
+ * API Docs: https://api.post-bridge.com/
  */
 const axios = require('axios');
 const config = require('../config');
 
+const API_BASE = 'https://api.post-bridge.com/v1';
+
+// Account IDs from Post-Bridge (Danny's accounts)
+const ACCOUNT_IDS = {
+  twitter: 38571,      // @dannyveigatx
+  instagram: 38572,    // @iamdannyveiga
+  facebook: 38573,     // Danny Veiga (Page)
+  linkedin: 38574,     // Danny Veiga (Personal)
+  linkedin_company: 38575  // Danny Veiga Marketing
+};
+
 class PostBridgeService {
   constructor() {
-    this.apiUrl = config.postBridgeApiUrl;
     this.apiKey = config.postBridgeApiKey;
   }
 
-  /**
-   * Get headers for API requests
-   */
   getHeaders() {
     return {
       'Authorization': `Bearer ${this.apiKey}`,
@@ -24,43 +33,63 @@ class PostBridgeService {
   }
 
   /**
-   * Create a post on specified platforms
+   * Get all connected social accounts
+   */
+  async getAccounts() {
+    try {
+      const response = await axios.get(`${API_BASE}/social-accounts`, {
+        headers: this.getHeaders()
+      });
+      return response.data.data || [];
+    } catch (error) {
+      console.error('[PostBridge] Failed to get accounts:', error.response?.data || error.message);
+      return [];
+    }
+  }
+
+  /**
+   * Create a post
    *
    * @param {Object} options
-   * @param {string} options.content - The post content
-   * @param {string[]} options.platforms - Platforms to post to ['twitter', 'linkedin', etc]
-   * @param {string[]} options.accountIds - Specific account IDs to use (optional)
-   * @param {Date} options.scheduledFor - Schedule for later (optional)
-   * @param {Object} options.media - Media attachments (optional)
+   * @param {string} options.caption - The post content
+   * @param {string[]} options.platforms - ['twitter', 'linkedin', etc]
+   * @param {Date} options.scheduledAt - Optional: schedule for later
+   * @param {string[]} options.mediaIds - Optional: media to attach
    */
   async createPost(options) {
-    const { content, platforms, accountIds, scheduledFor, media } = options;
+    const { caption, platforms, scheduledAt, mediaIds } = options;
 
-    // Build the request based on Post-Bridge API format
-    // Note: Actual API format may differ - update once you have access to their docs
+    // Map platforms to account IDs
+    const socialAccounts = platforms
+      .map(p => ACCOUNT_IDS[p])
+      .filter(Boolean);
+
+    if (socialAccounts.length === 0) {
+      return { success: false, error: 'No valid platforms specified' };
+    }
+
     const payload = {
-      content,
-      platforms: platforms || ['twitter'],
-      ...(accountIds && { accountIds }),
-      ...(scheduledFor && { scheduledFor: scheduledFor.toISOString() }),
-      ...(media && { media })
+      caption,
+      social_accounts: socialAccounts,
+      ...(scheduledAt && { scheduled_at: scheduledAt.toISOString() }),
+      ...(mediaIds && { media: mediaIds })
     };
 
     try {
-      const response = await axios.post(
-        `${this.apiUrl}/posts`,
-        payload,
-        { headers: this.getHeaders() }
-      );
+      const response = await axios.post(`${API_BASE}/posts`, payload, {
+        headers: this.getHeaders()
+      });
+
+      console.log('[PostBridge] Post created:', response.data);
 
       return {
         success: true,
         postId: response.data.id,
-        platforms: response.data.platforms,
-        status: response.data.status
+        status: response.data.status,
+        data: response.data
       };
     } catch (error) {
-      console.error('Post-Bridge API error:', error.response?.data || error.message);
+      console.error('[PostBridge] Create post error:', error.response?.data || error.message);
       return {
         success: false,
         error: error.response?.data?.message || error.message
@@ -69,114 +98,105 @@ class PostBridgeService {
   }
 
   /**
-   * Schedule a post for optimal engagement time
-   */
-  async schedulePost(content, platforms, scheduledFor) {
-    return this.createPost({
-      content,
-      platforms,
-      scheduledFor
-    });
-  }
-
-  /**
-   * Get list of connected accounts
-   */
-  async getAccounts() {
-    try {
-      const response = await axios.get(
-        `${this.apiUrl}/accounts`,
-        { headers: this.getHeaders() }
-      );
-
-      return response.data.accounts || [];
-    } catch (error) {
-      console.error('Failed to get accounts:', error.message);
-      return [];
-    }
-  }
-
-  /**
    * Get post status
    */
-  async getPostStatus(postId) {
+  async getPost(postId) {
     try {
-      const response = await axios.get(
-        `${this.apiUrl}/posts/${postId}`,
-        { headers: this.getHeaders() }
-      );
-
+      const response = await axios.get(`${API_BASE}/posts/${postId}`, {
+        headers: this.getHeaders()
+      });
       return response.data;
     } catch (error) {
-      console.error('Failed to get post status:', error.message);
+      console.error('[PostBridge] Get post error:', error.message);
       return null;
     }
   }
 
   /**
-   * Delete a scheduled post
+   * Get post results (what actually got published)
+   */
+  async getPostResults(postId) {
+    try {
+      const response = await axios.get(`${API_BASE}/post-results?post_id=${postId}`, {
+        headers: this.getHeaders()
+      });
+      return response.data.data || [];
+    } catch (error) {
+      console.error('[PostBridge] Get results error:', error.message);
+      return [];
+    }
+  }
+
+  /**
+   * Delete a post
    */
   async deletePost(postId) {
     try {
-      await axios.delete(
-        `${this.apiUrl}/posts/${postId}`,
-        { headers: this.getHeaders() }
-      );
-
+      await axios.delete(`${API_BASE}/posts/${postId}`, {
+        headers: this.getHeaders()
+      });
       return { success: true };
     } catch (error) {
-      console.error('Failed to delete post:', error.message);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Upload media and get ID for attaching to posts
+   */
+  async uploadMedia(fileBuffer, filename, mimeType) {
+    try {
+      // Step 1: Get signed upload URL
+      const urlResponse = await axios.post(`${API_BASE}/media/create-upload-url`, {
+        filename,
+        content_type: mimeType
+      }, { headers: this.getHeaders() });
+
+      const { upload_url, media_id } = urlResponse.data;
+
+      // Step 2: Upload to signed URL
+      await axios.put(upload_url, fileBuffer, {
+        headers: { 'Content-Type': mimeType }
+      });
+
+      return { success: true, mediaId: media_id };
+    } catch (error) {
+      console.error('[PostBridge] Upload error:', error.message);
       return { success: false, error: error.message };
     }
   }
 }
 
-// Fallback: Direct posting if Post-Bridge not configured
-class DirectPostingFallback {
-  /**
-   * Post directly to Twitter using their API
-   * Note: Requires Twitter API credentials (expensive now)
-   */
-  async postToTwitter(content) {
-    console.log('[DirectPosting] Twitter API not configured');
-    return { success: false, error: 'Twitter API not configured' };
-  }
-
-  /**
-   * Post directly to LinkedIn
-   * Note: Requires LinkedIn API approval
-   */
-  async postToLinkedIn(content) {
-    console.log('[DirectPosting] LinkedIn API not configured');
-    return { success: false, error: 'LinkedIn API not configured' };
-  }
-}
-
-// Export configured service
 const postBridgeService = new PostBridgeService();
-const directFallback = new DirectPostingFallback();
 
 module.exports = {
   postBridgeService,
-  directFallback,
+  ACCOUNT_IDS,
 
   /**
-   * Main posting function - tries Post-Bridge first, falls back to direct
+   * Main publish function used by ShipPost
    */
   async publishPost(post) {
-    if (config.postBridgeApiKey) {
-      return postBridgeService.createPost({
-        content: post.content,
-        platforms: [post.platform]
-      });
-    } else {
-      console.log('[ShipPost] Post-Bridge not configured, post saved for manual publishing');
-      return {
-        success: false,
-        error: 'Post-Bridge not configured',
-        savedForManual: true,
-        content: post.content
-      };
+    if (!config.postBridgeApiKey) {
+      console.log('[ShipPost] Post-Bridge not configured');
+      return { success: false, error: 'Post-Bridge not configured' };
     }
+
+    // Map platform names
+    const platformMap = {
+      'twitter': 'twitter',
+      'x': 'twitter',
+      'linkedin': 'linkedin',
+      'instagram': 'instagram',
+      'facebook': 'facebook',
+      'fb': 'facebook'
+    };
+
+    const platform = platformMap[post.platform?.toLowerCase()] || post.platform;
+
+    return postBridgeService.createPost({
+      caption: post.content,
+      platforms: [platform]
+    });
   }
 };
