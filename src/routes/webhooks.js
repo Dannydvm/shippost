@@ -284,11 +284,21 @@ router.post('/github', async (req, res) => {
   if (project.postFrequency === 'smart' || project.postFrequency === 'ai') {
     console.log(`[Webhook] Smart mode: AI classifying ${storedCommits.length} commits`);
 
-    // Get project context for classification
-    const projectContext = await voiceAnalyzer.getProjectContext(
-      project.id,
-      project.localPath
-    );
+    // Get project context for classification (use embedded config for Vercel)
+    let projectContext;
+    if (project.shippostConfig) {
+      projectContext = {
+        projectId: project.id,
+        config: project.shippostConfig,
+        voice: null,
+        platforms: { full: project.brand?.platforms || ['twitter'], light: [] }
+      };
+    } else {
+      projectContext = await voiceAnalyzer.getProjectContext(
+        project.id,
+        project.localPath
+      );
+    }
 
     // AI classifies commits
     const classification = await urgencyClassifier.classifyCommits(storedCommits, projectContext);
