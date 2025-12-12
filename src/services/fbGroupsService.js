@@ -12,7 +12,7 @@
  */
 const open = require('open');
 
-// Danny's FB Groups
+// Danny's FB Groups & Profiles
 const FB_GROUPS = {
   // Chadix - Local SEO community
   'chadix': {
@@ -20,6 +20,7 @@ const FB_GROUPS = {
     url: 'https://www.facebook.com/groups/991392238948400',
     category: 'tech',
     brand: 'chadix',
+    postType: 'full', // Full feature announcements
     description: 'Local SEO tools and strategies'
   },
   // Chiropractic Marketing - Main bread winner ($120K MRR)
@@ -28,14 +29,37 @@ const FB_GROUPS = {
     url: 'https://www.facebook.com/groups/671382746877005',
     category: 'chiropractic',
     brand: 'chiroflow',
+    postType: 'full', // Full feature announcements
     description: 'ChiroFlow CRM and App community'
   },
-  // Personal profile
-  'personal': {
-    name: 'Danny Veiga (Personal)',
+  // Personal FB profile - light updates only
+  'personal-fb': {
+    name: 'Danny Veiga (Personal FB)',
     url: 'https://www.facebook.com/',
     category: 'personal',
-    brand: 'danny-personal'
+    brand: 'danny-personal',
+    postType: 'light', // Quick updates, don't reveal too much
+    description: 'Personal profile for light updates'
+  }
+};
+
+// Platform routing per project
+const PLATFORM_ROUTING = {
+  'chiroflow-crm': {
+    full: ['chiro-marketing'],           // FB Group - full posts
+    light: ['twitter', 'personal-fb']     // X & Personal FB - light updates
+  },
+  'chiroflow-app': {
+    full: ['chiro-marketing'],
+    light: ['twitter', 'personal-fb']
+  },
+  'chadix': {
+    full: ['chadix', 'linkedin'],         // Chadix FB + LinkedIn - full posts
+    light: ['twitter', 'personal-fb']     // X & Personal FB - light updates
+  },
+  'shippost': {
+    full: ['twitter'],                    // X - full posts (it's open source)
+    light: ['personal-fb']                // Personal FB - light updates
   }
 };
 
@@ -214,6 +238,14 @@ const fbGroupsService = new FBGroupsService();
 module.exports = {
   fbGroupsService,
   FB_GROUPS,
+  PLATFORM_ROUTING,
+
+  /**
+   * Get platforms for a project
+   */
+  getPlatformsForProject(projectId) {
+    return PLATFORM_ROUTING[projectId] || { full: [], light: [] };
+  },
 
   /**
    * Quick function to queue and open groups for a post

@@ -71,7 +71,7 @@ async function analyzeCommits(commits, brand) {
   const commitSummary = commits.map(c => `- ${c.message} (${c.filesChanged} files)`).join('\n');
 
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-sonnet-4-5-20250929',
     max_tokens: 1000,
     messages: [{
       role: 'user',
@@ -122,7 +122,7 @@ async function generatePost(commits, brand, platform) {
 
   // Generate the actual post
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-sonnet-4-5-20250929',
     max_tokens: 500,
     messages: [{
       role: 'user',
