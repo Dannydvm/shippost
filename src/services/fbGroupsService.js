@@ -12,35 +12,30 @@
  */
 const open = require('open');
 
-// Danny's FB Groups (add more as needed)
+// Danny's FB Groups
 const FB_GROUPS = {
-  // Chiropractic groups
+  // Chadix - Local SEO community
+  'chadix': {
+    name: 'Chadix Local SEO',
+    url: 'https://www.facebook.com/groups/991392238948400',
+    category: 'tech',
+    brand: 'chadix',
+    description: 'Local SEO tools and strategies'
+  },
+  // Chiropractic Marketing - Main bread winner ($120K MRR)
   'chiro-marketing': {
     name: 'Chiropractic Marketing & Practice Growth',
-    url: 'https://www.facebook.com/groups/chiromarketinggroup',
-    category: 'chiropractic'
-  },
-  'chiro-tech': {
-    name: 'Chiropractic Technology',
-    url: 'https://www.facebook.com/groups/chirotechnology',
-    category: 'chiropractic'
-  },
-  // Vibe coding / dev groups
-  'indie-hackers': {
-    name: 'Indie Hackers',
-    url: 'https://www.facebook.com/groups/indiehackers',
-    category: 'tech'
-  },
-  'saas-growth': {
-    name: 'SaaS Growth Hacks',
-    url: 'https://www.facebook.com/groups/saasgrowth',
-    category: 'tech'
+    url: 'https://www.facebook.com/groups/671382746877005',
+    category: 'chiropractic',
+    brand: 'chiroflow',
+    description: 'ChiroFlow CRM and App community'
   },
   // Personal profile
   'personal': {
     name: 'Danny Veiga (Personal)',
     url: 'https://www.facebook.com/',
-    category: 'personal'
+    category: 'personal',
+    brand: 'danny-personal'
   }
 };
 
